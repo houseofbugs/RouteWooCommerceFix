@@ -12,21 +12,22 @@
 
 class Routeapp_Cron_Schedules
 {
-   /**
-    * Initialize the class and set its properties.
-    *
-    * @since    1.0.0
-    * @param      string    $plugin_name       The name of this plugin.
-    * @param      string    $version    The version of this plugin.
-    */
 
+    private $routeapp_webhooks;
+
+    /**
+     * Initialize the class and set its properties.
+     *
+     * @since    1.0.0
+     */
    public function __construct() {
-      add_filter('cron_schedules', array($this, 'wpcron_schedule'));
-      add_action('routeapp_check_for_missing_orders', array($this, 'routeapp_validation_worker'));
-      add_action('routeapp_check_for_weekly_missing_shipments', array($this, 'routeapp_weekly_missing_shipments_worker'));
-      add_action('routeapp_check_for_missing_shipments', array($this, 'routeapp_missing_shipments_worker'));
-    
-      $this->init();
+        $this->routeapp_webhooks = new Routeapp_Webhooks();
+        add_filter('cron_schedules', array($this, 'wpcron_schedule'));
+        add_action('routeapp_check_for_missing_orders', array($this, 'routeapp_validation_worker'));
+        add_action('routeapp_check_for_weekly_missing_shipments', array($this, 'routeapp_weekly_missing_shipments_worker'));
+        add_action('routeapp_check_for_missing_shipments', array($this, 'routeapp_missing_shipments_worker'));
+        add_action('routeapp_check_for_invalid_webhooks', array($this, 'routeapp_webhooks_validator'));
+        $this->init();
    }
 
    /**
@@ -39,6 +40,7 @@ class Routeapp_Cron_Schedules
       $this->set_schedule_event('routeapp_daily', 'routeapp_check_for_missing_orders');
       $this->set_schedule_event('routeapp_5_hours', 'routeapp_check_for_missing_shipments');
       $this->set_schedule_event('routeapp_daily', 'routeapp_check_for_weekly_missing_shipments');
+      $this->set_schedule_event('routeapp_5_hours', 'routeapp_check_for_invalid_webhooks');
    }
 
     public function set_schedule_event($event, $action) {
@@ -339,6 +341,16 @@ class Routeapp_Cron_Schedules
                 }
             }
         }
+    }
+
+    /**
+     * Periodic Worker that checks Route Webhooks validations
+     *
+     *
+     * @return void
+     */
+    function routeapp_webhooks_validator() {
+        $this->routeapp_webhooks->upsert_webhooks();
     }
 
     public function routeapp_missing_shipments_worker() {
