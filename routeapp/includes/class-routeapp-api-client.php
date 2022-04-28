@@ -479,6 +479,17 @@ class Routeapp_API_Client
         return $this->_make_public_api_call("asset-settings/$apiHost", array(), 'GET');
     }
 
+    /**
+     * Update the account status at Route API
+     *
+     * @return mixed|json string
+     */
+    public function update_merchant_status($status) {
+      $endpoint = 'merchants/' . $this->get_merchant_id();
+      $params = ['status' => $status];
+      return $this->_make_private_api_call( $endpoint, $params, 'POST' );
+    }
+
     /*
      * Make the call to the API
      * @param  string $endpoint
@@ -531,6 +542,7 @@ class Routeapp_API_Client
             'headers' => $headers,
             'body' => $method === 'POST' ? json_encode($params) : $params,
         );
+
         return wp_remote_request($url, $args);
     }
 
@@ -543,7 +555,6 @@ class Routeapp_API_Client
     {
         return $this->_make_api_call($this->get_secret_token(), $endpoint, $params, $method, $version);
     }
-
 
     protected function _make_private_api_call_using_user_token($endpoint, $params = array(), $method = 'GET', $version='v1')
     {

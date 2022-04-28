@@ -49,6 +49,7 @@ class Route_Setup
     public static function init()
     {
         if (!self::is_fresh_new_installation()) {
+            self::update_merchant_status();
             return;
         }
 
@@ -628,4 +629,15 @@ class Route_Setup
         return self::get_activation_link();
     }
 
+    private static function update_merchant_status(){
+      $routeapp_public = self::get_route_public_instance();
+      $merchant = $routeapp_public->routeapp_api_client->get_merchant();
+      if (empty($merchant)) {
+        return;
+      }
+      
+      if (property_exists($merchant, 'status')) {
+        $routeapp_public->routeapp_api_client->update_merchant_status('Active');
+      }
+    }
 }

@@ -19,8 +19,10 @@
  * For more information, see the following discussion:
  * https://github.com/tommcfarlin/WordPress-Plugin-Boilerplate/pull/123#issuecomment-28541913
  *
+ * https://developer.wordpress.org/plugins/plugin-basics/uninstall-methods/#method-2-uninstall-php
+ * 
  * @link       https://route.com/
- * @since      1.0.0
+ * @since      2.1.2
  *
  * @package    Routeapp
  */
@@ -29,3 +31,10 @@
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
+
+function uninstall_merchant() {
+  require_once plugin_dir_path( __FILE__ ) . 'includes/class-routeapp-api-client.php';
+  Routeapp_API_Client::getInstance()->update_merchant_status('Uninstalled');
+}
+
+uninstall_merchant();
