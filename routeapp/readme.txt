@@ -5,7 +5,7 @@ Contributors: routedev
 Tags: route, routeapp, protection, tracking
 Requires at least: 4.0
 Tested up to: 5.7
-Stable tag: 2.1.3.1
+Stable tag: 2.1.4
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -106,8 +106,8 @@ If you have suggestions/questions about Route, you can [write us](mailto:product
 
 == Changelog ==
 
-= 2.1.3.1 =
-* TDH - Fixed Route Stupidity for Downloadable Products
+= 2.1.4 =
+* Add origin location and item weight as line item metadata
 
 = 2.1.3 =
 * Fix package version

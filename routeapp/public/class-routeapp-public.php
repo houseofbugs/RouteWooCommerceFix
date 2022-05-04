@@ -160,7 +160,79 @@ class Routeapp_Public {
         $arr[] = '_routeapp_source_product_id';
         $arr[] = '_routeapp_image_url';
         $arr[] = '_routeapp_virtual';
+        $arr[] = '_routeapp_weight_value';
+        $arr[] = '_routeapp_weight_unit';
+        $arr[] = '_routeapp_origin_location';
         return $arr;
+    }
+
+    /**
+     * Fill metadata
+     *
+     * @param $item WC_Order_Item
+     * @param $product WC_Product
+     * @param $entity_type enum('order_item','item')
+     * @return void
+     */
+    public function fillMetaData($item, $product, $entity_type='order_item') {
+
+        $sourceProductId = $product->get_id();
+        $productImageUrl = (wp_get_attachment_url($product->get_image_id())) ? wp_get_attachment_url($product->get_image_id()) : null;
+        $weightValue = $product->get_weight();
+
+        $originLocation = json_encode([
+            'address' => get_option('woocommerce_store_address'),
+            'address2' => get_option('woocommerce_store_address_2'),
+            'store_city' => get_option('woocommerce_store_city'),
+            'store_postcode' => get_option('woocommerce_store_postcode'),
+            'default_country' => get_option('woocommerce_default_country'),
+        ]);
+
+
+        switch($entity_type) {
+            case 'order_item':
+                //add source_product_id as order line_item meta_data
+                self::addItemMeta($item, '_routeapp_source_product_id', $sourceProductId);
+
+                //add image_url as order line_item meta_data
+                self::addItemMeta($item, '_routeapp_image_url', $productImageUrl);
+
+                //add weight_value as order line_item meta_data
+                self::addItemMeta($item, '_routeapp_weight_value', $weightValue);
+
+                //add weight_unit as order line_item meta_data
+                self::addItemMeta($item, '_routeapp_weight_unit', get_option('woocommerce_weight_unit'));
+
+                //check if product is virtual
+                if ($product->is_virtual()) { // edited by TDH
+                    //add virtual as order line_item meta_data
+                    self::addItemMeta($item, '_routeapp_virtual', 1);
+                }
+                //add origin location as order line_item meta_data
+                self::addItemMeta($item, '_routeapp_origin_location', $originLocation);
+                break;
+            case 'item':
+                //add source_product_id as order line_item meta_data
+                self::addOrderItemMeta($item->get_id(), '_routeapp_source_product_id', $sourceProductId);
+
+                //add image_url as order line_item meta_data
+                self::addOrderItemMeta($item->get_id(), '_routeapp_image_url', $productImageUrl);
+
+                //add weight_value as order line_item meta_data
+                self::addOrderItemMeta($item->get_id(), '_routeapp_weight_value', $weightValue);
+
+                //add weight_unit as order line_item meta_data
+                self::addOrderItemMeta($item->get_id(), '_routeapp_weight_unit', get_option('woocommerce_weight_unit'));
+
+                //check if product is virtual
+                if ($product->is_virtual()) { // edited by TDH
+                    //add virtual as order line_item meta_data
+                    self::addOrderItemMeta($item->get_id(), '_routeapp_virtual', 1);
+                }
+                //add origin location as order line_item meta_data
+                self::addOrderItemMeta($item->get_id(), '_routeapp_origin_location', $originLocation);
+                break;
+        }
     }
 
     /**
@@ -174,18 +246,7 @@ class Routeapp_Public {
         $product = $item->get_product(); // Get the WC_Product object
         if ($product instanceof WC_Product) {
             try {
-                //add source_product_id as order line_item meta_data
-                self::addOrderItemMeta($item_id, '_routeapp_source_product_id', $product->get_id());
-
-                //add image_url as order line_item meta_data
-                $imageUrl = (wp_get_attachment_url($product->get_image_id())) ? wp_get_attachment_url($product->get_image_id()) : null;
-                self::addOrderItemMeta($item_id, '_routeapp_image_url', $imageUrl);
-
-                //check if product is virtual
-                if ($product->is_virtual()) {
-                    //add virtual as order line_item meta_data
-                    self::addOrderItemMeta($item_id, '_routeapp_virtual', 1);
-                }
+                self::fillMetaData($item, $product, 'item');
             }catch (Exception $exception) {
                 return false;
             }
@@ -242,18 +303,7 @@ class Routeapp_Public {
             $product = $item->get_product(); // Get the WC_Product object
             if ($product instanceof WC_Product) {
                 try {
-                    //add source_product_id as order line_item meta_data
-                    self::addItemMeta($item, '_routeapp_source_product_id', $product->get_id());
-
-                    //add image_url as order line_item meta_data
-                    $imageUrl = (wp_get_attachment_url($product->get_image_id())) ? wp_get_attachment_url($product->get_image_id()) : null;
-                    self::addItemMeta($item, '_routeapp_image_url', $imageUrl);
-
-                    //check if product is virtual
-                    if ($product->is_virtual()) {
-                        //add virtual as order line_item meta_data
-                        self::addItemMeta($item, '_routeapp_virtual', 1);
-                    }
+                    self::fillMetaData($item, $product, 'order_item');
                 }catch (Exception $exception) {
                     return false;
                 }
@@ -542,7 +592,7 @@ class Routeapp_Public {
 
             if ($product instanceof WC_Product) {
 
-                $isProductVirtual = ($product->is_virtual()) ? true : false;
+                $isProductVirtual = ($product->is_virtual()) ? true : false; // edited by TDH
 
                 $arrItem = array(
                     "delivery_method" => $isProductVirtual ? 'digital' :
@@ -1228,7 +1278,7 @@ class Routeapp_Public {
                 $product = wc_get_product($product_id);
 
                 if ($product) {
-                    if ($product->is_virtual()) {
+                    if ($product->is_virtual()) { // edited by TDH
                         continue;
                     }
 
@@ -1257,7 +1307,7 @@ class Routeapp_Public {
             foreach ( $cart->get_cart() as $cart_item ) {
                 $product = wc_get_product($cart_item['product_id']);
 
-                if (!$product) {
+                if (!$product) { // edited by TDH
                     continue;
                 }
                 $cart_item_subtotal = $cart_item['line_subtotal'];
@@ -1295,7 +1345,7 @@ class Routeapp_Public {
             foreach ( $cart->get_items() as $cart_item ) {
                 $product = wc_get_product($cart_item['product_id']);
 
-                if (!$product) {
+                if (!$product) { // edited by TDH
                     continue;
                 }
                 $cart_item_subtotal = $cart_item['line_subtotal'];
@@ -1355,7 +1405,7 @@ class Routeapp_Public {
             foreach ( $cart->get_cart() as $cart_item ) {
                 $product = wc_get_product($cart_item['product_id']);
 
-                if (!$product) {
+                if (!$product) { // edited by TDH
                     continue;
                 }
                 $cart_item_subtotal = $cart_item['line_subtotal'];
@@ -1390,7 +1440,7 @@ class Routeapp_Public {
             foreach ( $cart->get_items() as $cart_item ) {
                 $product = wc_get_product($cart_item['product_id']);
 
-                if (!$product) {
+                if (!$product) { // edited by TDH
                     continue;
                 }
                 $cart_item_subtotal = $cart_item['line_subtotal'];

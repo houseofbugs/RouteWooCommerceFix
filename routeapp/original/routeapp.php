@@ -9,7 +9,7 @@
  * Plugin Name:       Route App
  * Plugin URI:        https://route.com/for-merchants/
  * Description:       Route allows shoppers to insure their orders with one-click during checkout, adding a layer of 3rd party trust while improving the customer shopping experience.
- * Version:           2.1.4.1
+ * Version:           2.1.4
  * Author:            Route
  * Author URI:        https://route.com/
  * License:           GPL-2.0+
@@ -25,7 +25,7 @@ if ( ! defined( 'WPINC' ) ) {
 /**
  * Currently plugin version.
  */
-define( 'ROUTEAPP_VERSION', '2.1.4.1' );
+define( 'ROUTEAPP_VERSION', '2.1.4' );
 
 /**
  *
