@@ -290,6 +290,10 @@ class Routeapp_Cron_Schedules
 
         $query = new WP_Query( $args );
 
+        $this::routeapp_run_order_reconcile($query);
+    }
+
+    public static function routeapp_run_order_reconcile($query) {
         if (count($query->get_posts()) > 0) {
             foreach ($query->get_posts() as $post) {
                 $order = wc_get_order( $post->ID );

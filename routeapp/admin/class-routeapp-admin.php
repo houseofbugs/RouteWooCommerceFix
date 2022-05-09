@@ -53,6 +53,7 @@ class Routeapp_Admin {
         $this->routeapp_webhooks = new Routeapp_Webhooks();
 
         add_filter( 'woocommerce_get_settings_pages', array( $this, 'routeapp_add_settings' ), 15 );
+        add_filter( 'woocommerce_get_settings_pages', array( $this, 'routeapp_add_order_recover_settings' ), 15 );
 		add_filter( 'plugin_action_links', array( $this, 'get_action_links' ), 10, 2 );
 		add_filter( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ));
 
@@ -112,8 +113,26 @@ class Routeapp_Admin {
             $retArray = $settings;
         }
         $retArray[] = new WC_Settings_Routeapp();
+
         return $retArray;
     }
+
+    /**
+     * Create order recover settings tab in Woocommerce settings
+     *
+     */
+    public function routeapp_add_order_recover_settings($settings) {
+        require_once plugin_dir_path( __FILE__ ) . 'class-wc-settings-routeapp-order-recover.php';
+        $retArray = [];
+        if (is_object($settings)) {
+            $retArray[] = $settings;
+        } else {
+            $retArray = $settings;
+        }
+        $retArray[] = new WC_Settings_Routeapp_Order_Recover();
+        return $retArray;
+    }
+
 
     /**
 	 * Create extra action links to Plugin settings
