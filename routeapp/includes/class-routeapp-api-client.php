@@ -237,11 +237,34 @@ class Routeapp_API_Client
     {
         if (empty($tracking_id)) return false;
         return $this->_make_private_api_call('shipments', array(
-            'tracking_number' => $tracking_id,
+            'tracking_number' => $this->sanitize_value($tracking_id),
             'source_order_id' => $data['source_order_id'],
             'source_product_ids' => $data['source_product_ids'],
-            'courier_id' => $data['courier_id'],
+            'courier_id' => $this->sanitize_value($data['courier_id']),
         ), 'POST');
+    }
+
+    /**
+     *
+     * Sanitize shipstation tracking numbers. Moved to here from the
+     * class-routeapp-shipstation.php script because it is sometimes
+     * getting bypassed and orders are coming through with "-(SHIPSTATION)"
+     * at the end. Also added a more specific check for both a shipstation
+     * prefix and suffix WITH the dash since shipstation has moved the
+     * shipstation label to the back AND orders were coming through with
+     * either a leading or trailing "-"
+     *
+     * @param $value
+     * @return array|string
+     */
+
+    private function sanitize_value($value) {
+        $value = str_replace('-(SHIPSTATION)', '', $value);
+        $value = str_replace('(SHIPSTATION)-', '', $value);
+        $value = trim($value);
+        $value = str_replace('.', '', $value);
+        $value = str_replace(' ', '-', $value);
+        return $value;
     }
 
     /**

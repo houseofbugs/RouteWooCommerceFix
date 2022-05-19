@@ -143,8 +143,8 @@ class Routeapp_ShipStation extends Routeapp_WooCommerce_Common_Tracking_Provider
             $lines[1] = trim($lines[1]);
             $lines = explode('tracking number', $lines[1]);
             $courier_id = explode(' ', $lines[0]);
-            $courier_id = $this->sanitize_value($courier_id[0]);
-            $tracking_number = $this->sanitize_value($lines[1]);
+            $courier_id = $courier_id[0];
+            $tracking_number = $lines[1];
             $tracking_data['tracking_number']= $tracking_number;
             $tracking_data['courier_id']= $courier_id;
             if (isset($tracking_data['tracking_number']) && isset($tracking_data['courier_id'])) {
@@ -152,13 +152,5 @@ class Routeapp_ShipStation extends Routeapp_WooCommerce_Common_Tracking_Provider
             }
         }
         return false;
-    }
-
-    private function sanitize_value($value) {
-        $value = str_replace('(SHIPSTATION)', '', $value);
-        $value = trim($value);
-        $value = str_replace('.', '', $value);
-        $value = str_replace(' ', '-', $value);
-        return $value;
     }
 }
