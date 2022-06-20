@@ -1,15 +1,11 @@
 <?php
-
-class Routeapp_ShipStation extends Routeapp_WooCommerce_Common_Tracking_Provider implements Routeapp_WooCommerce_Tracking_Provider {
-
-    public function is_active()
-    {
-        return in_array( 'woocommerce-shipstation-integration/woocommerce-shipstation.php', (array) get_option( 'active_plugins', array() ));
+class Routeapp_Shipworks extends Routeapp_WooCommerce_Common_Tracking_Provider implements Routeapp_WooCommerce_Tracking_Provider
+{
+    public function __construct() {
     }
 
-    public function update($order_id, $api_client)
-    {
-        return;
+    public function is_active() {
+        return in_array( 'shipworks-e-commerce-bridge/controler.php', (array) get_option( 'active_plugins', array() ));
     }
 
     public static function get_route_public_instance(){
@@ -59,6 +55,11 @@ class Routeapp_ShipStation extends Routeapp_WooCommerce_Common_Tracking_Provider
         return $shipping_info;
     }
 
+    public function update($order_id, $api_client)
+    {
+        return;
+    }
+
     public function parse_order_notes($order_id, $route_app)
     {
         $order_notes = wc_get_order_notes([
@@ -67,7 +68,7 @@ class Routeapp_ShipStation extends Routeapp_WooCommerce_Common_Tracking_Provider
         ]);
         $existing_tracking_numbers = (array) explode( self::SEPARATOR_PIPE,
             get_post_meta($order_id, 'routeapp_shipment_tracking_number', true ));
-        if (!$order_notes && !$existing_tracking_numbers) return;
+        if (!$order_notes && !$existing_tracking_numbers) return false;
 
         $order = wc_get_order( $order_id );
         $product_ids = $this->get_order_products($order_id);
@@ -122,9 +123,7 @@ class Routeapp_ShipStation extends Routeapp_WooCommerce_Common_Tracking_Provider
                 }
             }
             $tracking_numbers = implode(self::SEPARATOR_PIPE, $tracking_numbers_array);
-            if (!empty($tracking_number)) {
-                $this->add_custom_post_meta($order_id, $tracking_numbers);
-            }
+            $this->add_custom_post_meta($order_id, $tracking_numbers);
             return true;
         }else {
             /* If user removed the order note from Woo */
@@ -138,26 +137,21 @@ class Routeapp_ShipStation extends Routeapp_WooCommerce_Common_Tracking_Provider
 
     private function parse_individual_order_note($note) {
         $tracking_data = [];
-        if (strpos($note, 'tracking number')) {
-            $lines = explode('shipped via', $note);
-            $lines[1] = trim($lines[1]);
-            $lines = explode('tracking number', $lines[1]);
-            $courier_id = explode(' ', $lines[0]);
-            $courier_id = $courier_id[0];
-            $tracking_number = $lines[1];
-            $tracking_data['tracking_number']= $this->sanitize_value($tracking_number);
-            $tracking_data['courier_id']= $courier_id;
-            if (isset($tracking_data['tracking_number']) && isset($tracking_data['courier_id'])) {
-                return $tracking_data;
-            }
+        if (strpos($note, 'Tracking number') && strpos($note, ' via ')) {
+            //Example text: "Your order 63 was shipped on 01-26-2021 via USPS. Tracking number is 01262021A."
+            //cut the text and keep with the last part:"USPS. Tracking number is 01262021A."
+            $cutNote = explode(' via ', $note);
+            $cutNote = $cutNote[1];
+            //cut text again, to keep with courier id
+            $cutNote = explode('.', $cutNote);
+            $tracking_data['courier_id'] = trim($cutNote[0]);
+            //now the note is "Tracking number is 01262021A"
+            $cutNote = $cutNote[1];
+            //cut text again, to grab tracking number
+            $cutNote = explode('Tracking number is', $cutNote);
+            $tracking_data['tracking_number'] = trim($cutNote[1]);
+            return $tracking_data;
         }
         return false;
-    }
-
-    private function sanitize_value($value) {
-        $value = str_replace(['-(SHIPSTATION)', '(SHIPSTATION)-', '(Shipstation)'], '', $value);
-        $value = str_replace('.', '', $value);
-        $value = trim($value);
-        return $value;
     }
 }

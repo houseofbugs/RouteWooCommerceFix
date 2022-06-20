@@ -1,15 +1,12 @@
 <?php
 
-class Routeapp_ShipStation extends Routeapp_WooCommerce_Common_Tracking_Provider implements Routeapp_WooCommerce_Tracking_Provider {
 
-    public function is_active()
-    {
-        return in_array( 'woocommerce-shipstation-integration/woocommerce-shipstation.php', (array) get_option( 'active_plugins', array() ));
+class Routeapp_ShippingEasyCustom extends Routeapp_WooCommerce_Common_Tracking_Provider implements Routeapp_WooCommerce_Tracking_Provider {
+    public function __construct() {
     }
 
-    public function update($order_id, $api_client)
-    {
-        return;
+    public function is_active() {
+        return in_array( 'woocommerce-shippingeasy/woocommerce-shippingeasy.php', (array) get_option( 'active_plugins', array() ));
     }
 
     public static function get_route_public_instance(){
@@ -57,6 +54,11 @@ class Routeapp_ShipStation extends Routeapp_WooCommerce_Common_Tracking_Provider
             }
         }
         return $shipping_info;
+    }
+
+    public function update($order_id, $api_client)
+    {
+        return;
     }
 
     public function parse_order_notes($order_id, $route_app)
@@ -107,9 +109,7 @@ class Routeapp_ShipStation extends Routeapp_WooCommerce_Common_Tracking_Provider
                             'params' => $params,
                             'method' => 'POST'
                         );
-                        if ($routeapp_public) {
-                            $routeapp_public->routeapp_log($exception, $extraData);
-                        }
+                        $routeapp_public->routeapp_log($exception, $extraData);
                         return false;
                     }
                 }
@@ -122,10 +122,7 @@ class Routeapp_ShipStation extends Routeapp_WooCommerce_Common_Tracking_Provider
                 }
             }
             $tracking_numbers = implode(self::SEPARATOR_PIPE, $tracking_numbers_array);
-            if (!empty($tracking_number)) {
-                $this->add_custom_post_meta($order_id, $tracking_numbers);
-            }
-            return true;
+            $this->add_custom_post_meta($order_id, $tracking_numbers);
         }else {
             /* If user removed the order note from Woo */
             if ($existing_tracking_numbers[0]!='') {
@@ -138,26 +135,24 @@ class Routeapp_ShipStation extends Routeapp_WooCommerce_Common_Tracking_Provider
 
     private function parse_individual_order_note($note) {
         $tracking_data = [];
-        if (strpos($note, 'tracking number')) {
-            $lines = explode('shipped via', $note);
-            $lines[1] = trim($lines[1]);
-            $lines = explode('tracking number', $lines[1]);
-            $courier_id = explode(' ', $lines[0]);
-            $courier_id = $courier_id[0];
-            $tracking_number = $lines[1];
-            $tracking_data['tracking_number']= $this->sanitize_value($tracking_number);
-            $tracking_data['courier_id']= $courier_id;
+        if (strpos($note, 'Tracking Number')) {
+            $lines = explode('<br/>', $note);
+            foreach ($lines as $line) {
+                $line = explode(':', $line);
+                switch (trim($line[0])) {
+                    case 'Shipping Tracking Number':
+                        $tracking_data['tracking_number']= trim($line[1]);
+                        break;
+                    case 'Carrier Key':
+                        $tracking_data['courier_id']= trim($line[1]);
+                        break;
+                }
+            }
             if (isset($tracking_data['tracking_number']) && isset($tracking_data['courier_id'])) {
                 return $tracking_data;
             }
         }
         return false;
     }
-
-    private function sanitize_value($value) {
-        $value = str_replace(['-(SHIPSTATION)', '(SHIPSTATION)-', '(Shipstation)'], '', $value);
-        $value = str_replace('.', '', $value);
-        $value = trim($value);
-        return $value;
-    }
 }
+

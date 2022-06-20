@@ -204,7 +204,7 @@ class Routeapp_Public {
                 self::addItemMeta($item, '_routeapp_weight_unit', get_option('woocommerce_weight_unit'));
 
                 //check if product is virtual
-                if ($product->is_virtual()) { // edited by TDH
+                if ($product->is_virtual()) {
                     //add virtual as order line_item meta_data
                     self::addItemMeta($item, '_routeapp_virtual', 1);
                 }
@@ -225,7 +225,7 @@ class Routeapp_Public {
                 self::addOrderItemMeta($item->get_id(), '_routeapp_weight_unit', get_option('woocommerce_weight_unit'));
 
                 //check if product is virtual
-                if ($product->is_virtual()) { // edited by TDH
+                if ($product->is_virtual()) {
                     //add virtual as order line_item meta_data
                     self::addOrderItemMeta($item->get_id(), '_routeapp_virtual', 1);
                 }
@@ -1278,7 +1278,7 @@ class Routeapp_Public {
                 $product = wc_get_product($product_id);
 
                 if ($product) {
-                    if ($product->is_virtual()) { // edited by TDH
+                    if ($product->is_virtual()) {
                         continue;
                     }
 

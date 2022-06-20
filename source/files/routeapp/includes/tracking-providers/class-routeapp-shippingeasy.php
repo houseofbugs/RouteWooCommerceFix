@@ -1,20 +1,40 @@
 <?php
 
-class Routeapp_ShipStation extends Routeapp_WooCommerce_Common_Tracking_Provider implements Routeapp_WooCommerce_Tracking_Provider {
 
-    public function is_active()
-    {
-        return in_array( 'woocommerce-shipstation-integration/woocommerce-shipstation.php', (array) get_option( 'active_plugins', array() ));
+class Routeapp_ShippingEasy extends Routeapp_WooCommerce_Common_Tracking_Provider implements Routeapp_WooCommerce_Tracking_Provider {
+    public function __construct() {
     }
 
-    public function update($order_id, $api_client)
-    {
-        return;
+    public function is_active() {
+        return in_array( 'shippingeasy-for-wp-ecommerce/shippingeasy.php', (array) get_option( 'active_plugins', array() )) || $this->check_for_shipping_easy_integration();
     }
 
     public static function get_route_public_instance(){
         global $routeapp_public;
         return $routeapp_public;
+    }
+
+    /**
+     * Shipping Easy integrates directly with WooCommerce REST API
+     * making the plugin detection approach useless. So this method intents
+     * to detect ShippingEasy integration based on its default name.
+     *
+     * @return bool
+     */
+    private function check_for_shipping_easy_integration()
+    {
+        global $wpdb;
+
+        $user = $wpdb->get_row(
+            $wpdb->prepare(
+                "
+                SELECT key_id, description, user_id, permissions, consumer_key, consumer_secret, nonces
+                FROM {$wpdb->prefix}woocommerce_api_keys
+                WHERE description LIKE '%ShippingEasy%'
+            ")
+        );
+
+        return !empty($user);
     }
 
     public function get_shipping_provider_name($order_id)
@@ -59,6 +79,11 @@ class Routeapp_ShipStation extends Routeapp_WooCommerce_Common_Tracking_Provider
         return $shipping_info;
     }
 
+    public function update($order_id, $api_client)
+    {
+        return;
+    }
+
     public function parse_order_notes($order_id, $route_app)
     {
         $order_notes = wc_get_order_notes([
@@ -69,7 +94,6 @@ class Routeapp_ShipStation extends Routeapp_WooCommerce_Common_Tracking_Provider
             get_post_meta($order_id, 'routeapp_shipment_tracking_number', true ));
         if (!$order_notes && !$existing_tracking_numbers) return;
 
-        $order = wc_get_order( $order_id );
         $product_ids = $this->get_order_products($order_id);
 
         if (count($order_notes)>0) {
@@ -107,9 +131,7 @@ class Routeapp_ShipStation extends Routeapp_WooCommerce_Common_Tracking_Provider
                             'params' => $params,
                             'method' => 'POST'
                         );
-                        if ($routeapp_public) {
-                            $routeapp_public->routeapp_log($exception, $extraData);
-                        }
+                        $routeapp_public->routeapp_log($exception, $extraData);
                         return false;
                     }
                 }
@@ -122,9 +144,7 @@ class Routeapp_ShipStation extends Routeapp_WooCommerce_Common_Tracking_Provider
                 }
             }
             $tracking_numbers = implode(self::SEPARATOR_PIPE, $tracking_numbers_array);
-            if (!empty($tracking_number)) {
-                $this->add_custom_post_meta($order_id, $tracking_numbers);
-            }
+            $this->add_custom_post_meta($order_id, $tracking_numbers);
             return true;
         }else {
             /* If user removed the order note from Woo */
@@ -138,26 +158,23 @@ class Routeapp_ShipStation extends Routeapp_WooCommerce_Common_Tracking_Provider
 
     private function parse_individual_order_note($note) {
         $tracking_data = [];
-        if (strpos($note, 'tracking number')) {
-            $lines = explode('shipped via', $note);
-            $lines[1] = trim($lines[1]);
-            $lines = explode('tracking number', $lines[1]);
-            $courier_id = explode(' ', $lines[0]);
-            $courier_id = $courier_id[0];
-            $tracking_number = $lines[1];
-            $tracking_data['tracking_number']= $this->sanitize_value($tracking_number);
-            $tracking_data['courier_id']= $courier_id;
+        if (strpos($note, 'Tracking Number')) {
+            $lines = explode(PHP_EOL, $note);
+            foreach ($lines as $line) {
+                $line = explode(':', $line);
+                switch (trim($line[0])) {
+                    case 'Shipment Tracking Number':
+                        $tracking_data['tracking_number']= trim($line[1]);
+                        break;
+                    case 'Carrier Key':
+                        $tracking_data['courier_id']= trim($line[1]);
+                        break;
+                }
+            }
             if (isset($tracking_data['tracking_number']) && isset($tracking_data['courier_id'])) {
                 return $tracking_data;
             }
         }
         return false;
-    }
-
-    private function sanitize_value($value) {
-        $value = str_replace(['-(SHIPSTATION)', '(SHIPSTATION)-', '(Shipstation)'], '', $value);
-        $value = str_replace('.', '', $value);
-        $value = trim($value);
-        return $value;
     }
 }

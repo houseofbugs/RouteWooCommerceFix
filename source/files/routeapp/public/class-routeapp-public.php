@@ -204,7 +204,7 @@ class Routeapp_Public {
                 self::addItemMeta($item, '_routeapp_weight_unit', get_option('woocommerce_weight_unit'));
 
                 //check if product is virtual
-                if ($product->is_virtual() || $product->is_downloadable('yes')) {
+                if ($product->is_virtual()) {
                     //add virtual as order line_item meta_data
                     self::addItemMeta($item, '_routeapp_virtual', 1);
                 }
@@ -225,7 +225,7 @@ class Routeapp_Public {
                 self::addOrderItemMeta($item->get_id(), '_routeapp_weight_unit', get_option('woocommerce_weight_unit'));
 
                 //check if product is virtual
-                if ($product->is_virtual() || $product->is_downloadable('yes')) {
+                if ($product->is_virtual()) {
                     //add virtual as order line_item meta_data
                     self::addOrderItemMeta($item->get_id(), '_routeapp_virtual', 1);
                 }
@@ -592,7 +592,7 @@ class Routeapp_Public {
 
             if ($product instanceof WC_Product) {
 
-                $isProductVirtual = ($product->is_virtual() || $product->is_downloadable('yes')) ? true : false;
+                $isProductVirtual = (bool)$product->is_virtual();
 
                 $arrItem = array(
                     "delivery_method" => $isProductVirtual ? 'digital' :
@@ -1278,7 +1278,7 @@ class Routeapp_Public {
                 $product = wc_get_product($product_id);
 
                 if ($product) {
-                    if ($product->is_virtual() || $product->is_downloadable('yes')) {
+                    if ($product->is_virtual()) {
                         continue;
                     }
 
@@ -1307,7 +1307,8 @@ class Routeapp_Public {
             foreach ( $cart->get_cart() as $cart_item ) {
                 $product = wc_get_product($cart_item['product_id']);
 
-                if (!$product || $product->is_downloadable('yes')) {
+                if (!$product || $product->is_virtual()) {
+                    //if the product is not found or virtual, skip it
                     continue;
                 }
                 $cart_item_subtotal = $cart_item['line_subtotal'];
@@ -1321,9 +1322,6 @@ class Routeapp_Public {
                         //add bundle parent key to allowed array
                         $allowed_bundle_parents[] = $cart_item['key'];
                     }
-                }elseif($product->is_virtual()){
-                    //if the item is not bundle and is virtual, skip it
-                    continue;
                 }
 
                 if (isset($cart_item['bundled_by'])) {
@@ -1345,7 +1343,8 @@ class Routeapp_Public {
             foreach ( $cart->get_items() as $cart_item ) {
                 $product = wc_get_product($cart_item['product_id']);
 
-                if (!$product || $product->is_downloadable('yes')) {
+                if (!$product || $product->is_virtual()) {
+                    //if the product is not found or virtual, skip it
                     continue;
                 }
                 $cart_item_subtotal = $cart_item['line_subtotal'];
@@ -1359,9 +1358,6 @@ class Routeapp_Public {
                         //add bundle parent key to allowed array
                         $allowed_bundle_parents[] = $cart_item['key'];
                     }
-                }elseif($product->is_virtual()){
-                    //if the item is not bundle and is virtual, skip it
-                    continue;
                 }
 
                 if (isset($cart_item['bundled_by'])) {
@@ -1405,7 +1401,8 @@ class Routeapp_Public {
             foreach ( $cart->get_cart() as $cart_item ) {
                 $product = wc_get_product($cart_item['product_id']);
 
-                if (!$product || $product->is_downloadable('yes')) {
+                if (!$product || $product->is_virtual()) {
+                    //if the product is not found or virtual, skip it
                     continue;
                 }
                 $cart_item_subtotal = $cart_item['line_subtotal'];
@@ -1419,9 +1416,6 @@ class Routeapp_Public {
                         //add bundle parent key to allowed array
                         $allowed_bundle_parents[] = $cart_item['key'];
                     }
-                }elseif($product->is_virtual()){
-                    //if the item is not bundle and is virtual, skip it
-                    continue;
                 }
 
                 if (isset($cart_item['bundled_by'])) {
@@ -1440,7 +1434,8 @@ class Routeapp_Public {
             foreach ( $cart->get_items() as $cart_item ) {
                 $product = wc_get_product($cart_item['product_id']);
 
-                if (!$product || $product->is_downloadable('yes')) {
+                if (!$product || $product->is_virtual()) {
+                    //if the product is not found or virtual, skip it
                     continue;
                 }
                 $cart_item_subtotal = $cart_item['line_subtotal'];
@@ -1454,9 +1449,6 @@ class Routeapp_Public {
                         //add bundle parent key to allowed array
                         $allowed_bundle_parents[] = $cart_item['key'];
                     }
-                }elseif($product->is_virtual()){
-                    //if the item is not bundle and is virtual, skip it
-                    continue;
                 }
 
                 if (isset($cart_item['bundled_by'])) {
