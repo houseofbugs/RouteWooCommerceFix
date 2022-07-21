@@ -5,7 +5,7 @@ Contributors: routedev
 Tags: route, routeapp, protection, tracking
 Requires at least: 4.0
 Tested up to: 6.0
-Stable tag: 2.1.9
+Stable tag: 2.2.0
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -105,6 +105,10 @@ You can uninstall Route at any time. If you do wish to uninstall Route, you can 
 If you have suggestions/questions about Route, you can [write us](mailto:product@route.com "Route Product Team") so we can provide you assistance.
 
 == Changelog ==
+
+= 2.2.0 =
+* Fix issue on order reconcile
+* Improvement on webhook creation
 
 = 2.1.9 =
 * Update tested Wordpress version

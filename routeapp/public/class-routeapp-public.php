@@ -592,7 +592,7 @@ class Routeapp_Public {
 
             if ($product instanceof WC_Product) {
 
-                $isProductVirtual = ($product->is_virtual()) ? true : false; // edited by TDH
+                $isProductVirtual = (bool)$product->is_virtual();
 
                 $arrItem = array(
                     "delivery_method" => $isProductVirtual ? 'digital' :
@@ -1322,6 +1322,7 @@ class Routeapp_Public {
                         $allowed_bundle_parents[] = $cart_item['key'];
                     }
                 }elseif($product->is_virtual()){
+                    // edited by TDH
                     //if the item is not bundle and is virtual, skip it
                     continue;
                 }
@@ -1359,7 +1360,8 @@ class Routeapp_Public {
                         //add bundle parent key to allowed array
                         $allowed_bundle_parents[] = $cart_item['key'];
                     }
-                }elseif($product->is_virtual()){
+                }elseif($product->is_virtual()){ 
+                    // edited by TDH
                     //if the item is not bundle and is virtual, skip it
                     continue;
                 }
@@ -1420,6 +1422,7 @@ class Routeapp_Public {
                         $allowed_bundle_parents[] = $cart_item['key'];
                     }
                 }elseif($product->is_virtual()){
+                	// edited by TDH
                     //if the item is not bundle and is virtual, skip it
                     continue;
                 }
@@ -1455,6 +1458,7 @@ class Routeapp_Public {
                         $allowed_bundle_parents[] = $cart_item['key'];
                     }
                 }elseif($product->is_virtual()){
+                	// edited by TDH
                     //if the item is not bundle and is virtual, skip it
                     continue;
                 }

@@ -50,10 +50,10 @@ if ( ! class_exists( 'WC_Settings_Routeapp_Order_Recover' ) ) :
                     'class' => 'route-datepicker',
                 ),
                 array(
-                    'name' => __( 'Show query', 'routeapp' ),
+                    'name' => __( 'Reconcile existing orders', 'routeapp' ),
                     'type' => 'checkbox',
-                    'desc' => __( 'When enabled, the query used for order sync will be displayed', 'routeapp'),
-                    'id'   => 'routeapp_order_recover_show_query',
+                    'desc' => __( 'When enabled, will update Route Charge and Route Protection on Orders section', 'routeapp'),
+                    'id'   => 'routeapp_order_recover_reconcile_backend',
                     'default' => 'no'
                 ),
                 array(
@@ -79,41 +79,53 @@ if ( ! class_exists( 'WC_Settings_Routeapp_Order_Recover' ) ) :
         public function save() {
             $settings = $this->get_settings();
             if (isset($_POST) && isset($_POST['routeapp_order_recover_from']) && isset($_POST['routeapp_order_recover_to'])) {
-                //trigger order reconcile
-                $date_query = array(
-                    'column' => 'post_modified_gmt',
-                    'before' => $_POST['routeapp_order_recover_to'],
-                    'after' => $_POST['routeapp_order_recover_from'],
-                    'inclusive' => true,
-                );
+                $args = [
+                    'limit' => -1,
+                    'date_created' => '<=' . $_POST['routeapp_order_recover_to'],
+                    'date_created' => '>=' . $_POST['routeapp_order_recover_from'],
+                ];
+                $orders = wc_get_orders( $args );
 
-                $args = array(
-                    'post_type' => 'shop_order',
-                    'posts_per_page' => -1,
-                    'post_status' => array_keys( wc_get_order_statuses() ),
-                    'date_query' => $date_query,
-                    'meta_query' => array(
-                        array(
-                            'key' => '_routeapp_order_id',
-                            'compare' => 'NOT EXISTS'
-                        ),
-                    )
-                );
+                echo '<div id="route-order-sync-query-count" style="display:none;">'.count($orders).'</div>';
 
-                $query = new WP_Query( $args );
-
-                if (isset($_POST['routeapp_order_recover_show_query'])) {
-                    echo '<div id="route-order-sync-query" style="display:none;">';
-                    echo '<h4>Query:</h4>';
-                    echo $query->request;
-                    echo '<h4>Total orders matching: '.count($query->get_posts()).'</h4>';
-                    echo '</div>';
+                if (isset($_POST['routeapp_order_recover_reconcile_backend'])) {
+                    $this->updateOrderPostMeta($orders);
+                } else {
+                    $this->massiveOrderSave($orders);
                 }
-                echo '<div id="route-order-sync-query-count" style="display:none;">'.count($query->get_posts()).'</div>';
-
-                Routeapp_Cron_Schedules::routeapp_run_order_reconcile($query);
             }
             WC_Admin_Settings::save_fields( $settings );
+        }
+
+        /**
+         * Trigger save for all the selected orders, which will trigger the webhook for order.update
+         *
+         * @param $orders
+         * @return void
+         */
+        public function massiveOrderSave($orders) {
+            foreach ($orders as $order) {
+                $order->save();
+            }
+        }
+
+        /**
+         * Update order post_meta with route order data
+         *
+         * @param $orders
+         * @return void
+         */
+        public function updateOrderPostMeta($orders) {
+            foreach ($orders as $order) {
+                if (!get_post_meta( $order->get_id(), '_routeapp_order_id')) {
+                    //check if order exists on Route side
+                    $getOrderResponse = Routeapp_API_Client::getInstance()->get_order($order->get_id());
+                    if (is_wp_error($getOrderResponse) || $getOrderResponse['response']['code'] != 200) {
+                        continue;
+                    }
+                    Routeapp_Cron_Schedules::updateOrderPostMeta($order, $getOrderResponse);
+                }
+            }
         }
     }
 endif;

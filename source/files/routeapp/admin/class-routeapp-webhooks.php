@@ -33,21 +33,24 @@ class Routeapp_Webhooks {
     private $_webhooksList;
 
     public function __construct() {
+        $this->buildWebhookList();
+    }
 
+    private function buildWebhookList()
+    {
+        $webhooksList = self::webhooksList;
+        foreach ($webhooksList as $webhookName => $values) {
+            $webhooksList[$webhookName]['delivery_url'] = $this->generate_delivery_url($values['delivery_url']);
+        }
+        $this->_webhooksList = $webhooksList;
+    }
+
+    private function generate_delivery_url($url) {
         $custom_env = getenv('ROUTEAPP_ENVIRONMENT_ENDPOINT');
         if (is_null($custom_env) || !$custom_env) {
             $custom_env = isset($_SERVER['ROUTEAPP_ENVIRONMENT_ENDPOINT']) ? $_SERVER['ROUTEAPP_ENVIRONMENT_ENDPOINT'] : '';
         }
-        $webhooksList = self::webhooksList;
 
-        foreach ($webhooksList as $webhookName => $values) {
-            $webhooksList[$webhookName]['delivery_url'] = $this->generate_delivery_url($custom_env, $values['delivery_url']);
-        }
-
-        $this->_webhooksList = $webhooksList;
-    }
-
-    private function generate_delivery_url($custom_env, $url) {
         $delivery_url = $custom_env == 'stage' ? self::API_GATEWAY_ENDPOINT_STAGING : self::API_GATEWAY_ENDPOINT;
         $delivery_url.= $url . get_option('routeapp_merchant_id');
         return $delivery_url;
@@ -67,15 +70,25 @@ class Routeapp_Webhooks {
     }
 
     public function get_secret() {
-        $secret = get_option('_routeapp_webhooks_secret');
+        $secret = get_option('_routeapp_webhooks_secret', false);
         if (!$secret) {
             $secret = $this->set_secret();
         }
         return $secret;
     }
 
+    private function _is_routedata_complete()
+    {
+        $merchant_id = get_option('routeapp_merchant_id', false);
+        $secret_token = get_option('routeapp_secret_token', false);
+        return $merchant_id && $secret_token;
+    }
+
     public function upsert_webhooks() {
-        if ( class_exists( 'WC_Data_Store' ) ) {
+        //rebuild webhooks list to avoid issues with merchant_id on construct
+        $this->buildWebhookList();
+
+        if ( class_exists( 'WC_Data_Store' ) && $this->_is_routedata_complete() ) {
             //check webhook secret on database
             $secret = $this->get_secret();
 

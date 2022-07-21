@@ -561,7 +561,7 @@ class Routeapp_API_Client
             'timeout' => 6,
             'method' => $method,
             'headers' => $headers,
-            'body' => $method === 'POST' ? json_encode($params) : $params,
+            'body' => $method === 'POST' ? json_encode($params) : null
         );
 
         return wp_remote_request($url, $args);

@@ -65,15 +65,15 @@ class Routeapp_Admin {
 
     private function _is_routedata_complete()
     {
-        $merchant_id = get_option('routeapp_merchant_id');
-        $secret_token = get_option('routeapp_secret_token');
+        $merchant_id = get_option('routeapp_merchant_id', false);
+        $secret_token = get_option('routeapp_secret_token', false);
         return $merchant_id && $secret_token;
     }
 
     public function upsert_webhooks() {
         //only check for webhooks if we have merchant id and secret token on database
         if ($this->_is_routedata_complete()) {
-            $upsertWebhooks = get_option('_routeapp_webhooks_created');
+            $upsertWebhooks = get_option('_routeapp_webhooks_created', false);
             //only upsert webhooks if we cannot find flag
             if (!$upsertWebhooks) {
                 $this->routeapp_webhooks->upsert_webhooks();

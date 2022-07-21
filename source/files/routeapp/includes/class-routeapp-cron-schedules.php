@@ -293,6 +293,23 @@ class Routeapp_Cron_Schedules
         $this::routeapp_run_order_reconcile($query);
     }
 
+    /**
+     * Update order post_meta with route order data
+     *
+     * @param $order
+     * @param $routeOrder
+     * @return void
+     */
+    public static function updateOrderPostMeta($order, $routeOrder) {
+        //order was found, save route order id in db
+        $routeOrder = json_decode($routeOrder['body'], true);
+        update_post_meta( $order->get_id(), '_routeapp_order_id', $routeOrder['id'] );
+        $routeCharge = $routeOrder['insured_status'] == 'insured_selected' ? $routeOrder['paid_to_insure'] : '';
+        update_post_meta( $order->get_id(), '_routeapp_route_charge', $routeCharge );
+        $protected = !empty($routeCharge) ? 1 : 0;
+        update_post_meta( $order->get_id(), '_routeapp_route_protection', $protected );
+    }
+
     public static function routeapp_run_order_reconcile($query) {
         if (count($query->get_posts()) > 0) {
             foreach ($query->get_posts() as $post) {
@@ -307,12 +324,7 @@ class Routeapp_Cron_Schedules
 
                 if ($getOrderResponse['response']['code'] == 200 ) {
                     //order was found, save route order id in db
-                    $routeOrder = json_decode($getOrderResponse['body'], true);
-                    update_post_meta( $order->get_id(), '_routeapp_order_id', $routeOrder['id'] );
-                    $routeCharge = $routeOrder['insured_status'] == 'insured_selected' ? $routeOrder['paid_to_insure'] : '';
-                    update_post_meta( $order->get_id(), '_routeapp_route_charge', $routeCharge );
-                    $protected = !empty($routeCharge) ? 1 : 0;
-                    update_post_meta( $order->get_id(), '_routeapp_route_protection', $protected );
+                    self::updateOrderPostMeta($order, $getOrderResponse);
                 } else {
                     //order not found, create from our side
                     $routeapp_public = self::get_route_public_instance();
